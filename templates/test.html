@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+</head>
+
+<body>
+    <div id="camera">
+        <div id="contentHolder">
+            <video id="video" width="300" height="300" autoplay></video>
+            <canvas style="display:none;" id="canvas" width="300" height="300"></canvas>
+        </div>
+        <div id="btn_snap">拍照</div>
+    </div>
+
+    <script>
+        var canvas = document.getElementById("canvas"),
+            pzBtn = document.getElementById("btn_snap"),
+            context = canvas.getContext("2d"),
+            video = document.getElementById("video");
+        alert('该页面会调用您的摄像头')
+        // 旧版本浏览器可能根本不支持mediaDevices，我们首先设置一个空对象
+        if (navigator.mediaDevices === undefined) {
+            navigator.mediaDevices = {};
+        }
+        // 一些浏览器实现了部分mediaDevices，我们不能只分配一个对象
+        // 使用getUserMedia，因为它会覆盖现有的属性。
+        // 这里，如果缺少getUserMedia属性，就添加它。
+        if (navigator.mediaDevices.getUserMedia === undefined) {
+            navigator.mediaDevices.getUserMedia = function (constraints) {
+                // 首先获取现存的getUserMedia(如果存在)
+                var getUserMedia = navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+                // 有些浏览器不支持，会返回错误信息
+                // 保持接口一致
+                if (!getUserMedia) {
+                    return Promise.reject(new Error('getUserMedia is not implemented in this browser'));
+                }
+                //否则，使用Promise将调用包装到旧的navigator.getUserMedia
+                return new Promise(function (resolve, reject) {
+                    getUserMedia.call(navigator, constraints, resolve, reject);
+                });
+            }
+        }
+        var constraints = { audio: false, video: {width: 720,height:720} }
+        navigator.mediaDevices.getUserMedia(constraints)
+            .then(function (stream) {
+                var video = document.querySelector('video');
+                // 旧的浏览器可能没有srcObject
+                if ("srcObject" in video) {
+                    video.srcObject = stream;
+                } else {
+                    //避免在新的浏览器中使用它，因为它正在被弃用。
+                    video.src = window.URL.createObjectURL(stream);
+                }
+                video.onloadedmetadata = function (e) {
+                    video.play();
+                };
+            })
+            .catch(function (err) {
+                console.log(err.name + ": " + err.message);
+            });
+
+
+
+        pzBtn.addEventListener("click", function () {
+            // 点击，canvas画图
+            context.drawImage(video, 0, 0, 300, 300);
+            // 获取图片base64链接
+            var image = canvas.toDataURL('image/png');
+            // 定义一个img
+            var img = new Image();
+            //设置属性和src
+            img.id = "imgBoxxx";
+            img.src = image;
+            //将图片添加到页面中
+            document.body.appendChild(img);
+
+            // base64转文件
+            function dataURLtoFile(dataurl, filename) {
+                var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+                while (n--) {
+                    u8arr[n] = bstr.charCodeAt(n);
+                }
+                return new File([u8arr], filename, {type: mime});
+            }
+            console.log(dataURLtoFile(image, 'aa.png'));
+        });
+    </script>
+
+
+
+</body>
+</html>

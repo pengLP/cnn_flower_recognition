@@ -1,0 +1,2 @@
+model_checkpoint_path: "D:/python/workspace/flower/model/model.ckpt"
+all_model_checkpoint_paths: "D:/python/workspace/flower/model/model.ckpt"
